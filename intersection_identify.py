@@ -26,7 +26,7 @@ def checkforcross(twentylines, roadline):
     the main condition is the value of the mean of the values that located in the center of the line to be 2 times higher than the 2 other means
     the one for the first 3 lines and the one of the last 3 lines. If that is the case then the road is tested if it is T intersection as well'''
 
-    print("this is the number of the actual widths: ", len(twentylines))
+    #print("this is the number of the actual widths: ", len(twentylines))
     if len(twentylines) > 19:
         first = [twentylines[0][0], twentylines[1][0], twentylines[2][0]]#, twentylines[3], twentylines[4], twentylines[5]]
         mid = [twentylines[7][0], twentylines[8][0], twentylines[9][0], twentylines[10][0], twentylines[11][0], twentylines[12][0]]
@@ -114,7 +114,7 @@ def checkforcross(twentylines, roadline):
 
 #this function checks also for T intersection  BUT 
 def checkforTcase2(twentylines, roadline):
-    print("it passes the test for cross intersection i am checking for T intersection of case 2")
+    #print("it passes the test for cross intersection i am checking for T intersection of case 2")
     if len(twentylines) > 19:
         first = [twentylines[0][0], twentylines[1][0], twentylines[2][0]]#, twentylines[3], twentylines[4], twentylines[5]]
         mid = [twentylines[7][0], twentylines[8][0], twentylines[9][0], twentylines[10][0], twentylines[11][0], twentylines[12][0]]
@@ -190,7 +190,7 @@ def checkforTcase2(twentylines, roadline):
             if dif11end-dif11start > 0.9*dif11start:
                 differences.append(1)
 
-        if len(differences) >= 3:
+        if len(differences) >= 2:
             print("there is a T intersection case2")
             return True
         else:
@@ -200,7 +200,7 @@ def checkforTcase2(twentylines, roadline):
         return False
 
 def checkforTmaincase(twentylines, roadline):
-    print("it passed the test for T intersection of case 1 and 2, checking for T intersection Main case!")
+    #print("it passed the test for T intersection of case 1 and 2, checking for T intersection Main case!")
     if len(twentylines) > 19:
         first = [twentylines[0][0], twentylines[1][0], twentylines[2][0], twentylines[3][0]]
         last = [twentylines[17][0], twentylines[18][0], twentylines[19][0]]

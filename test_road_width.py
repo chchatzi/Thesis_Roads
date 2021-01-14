@@ -5,21 +5,16 @@ from shapely.geometry import LineString
 from shapely.geometry import Polygon
 from shapely.geometry import MultiLineString
 from shapely.geometry import Point
-from road_lines_polygons import line, polygon,line22, polygon22, line01, polygon01, line1, polygon1
-from road_lines_polygons import linecross1case1,linecross1case2, polygoncross1
-from road_lines_polygons import linecross2case1, linecross2case2, polygoncross2
-from road_lines_polygons import linesmall1, linesmall2,polygonsmall
-from road_lines_polygons import toronto_intersection_cross_line, toronto_intersection_cross_polygon, toronto_intersection_t_line1, toronto_intersection_t_polygon
-from road_lines_polygons import line_t_intersection_case1 , line_t_intersection_maincase, polygon_t_intersection_case1_and_maincase, line_t_intersection_case2, polygon_t_intersection_case2
 from intersection_identify import checkforcross, checkforTcase2, checkforTmaincase
-from road_lines_polygons import bigcenterline,polygonlist
+from shapefile_manipulation import allpolygons, bigcenterline
 
 
 def fitlinetopolygons(line, polygonlist):
     lines_polygons_pairs = []
     for i in polygonlist:
-        fitline = line.intersection(i)
-        lines_polygons_pairs.append([fitline,i])
+        if line.intersects(i):
+            fitline = line.intersection(i)
+            lines_polygons_pairs.append([fitline,i])
     return lines_polygons_pairs
 
 
@@ -95,8 +90,8 @@ def cutlinetoten(line):
 #function that takes a line and defines 2 offsets 
 #we did this in order to create a line prependicular to our road (the 10 lines that used to define the width of the road should be prependicular to the linear representation of the road)
 def makeoffsets(line):
-    leftline = line[0].parallel_offset(5, 'left')
-    rightline = line[0].parallel_offset(5, 'right')
+    leftline = line[0].parallel_offset(1, 'left')
+    rightline = line[0].parallel_offset(1, 'right')
     #print(leftline)
     #print(rightline)
     #print(leftline)
@@ -147,8 +142,13 @@ def avgwidth2(lst):
 
 def mean_w_centerline(widthsofcenterline):
     for i in widthsofcenterline:
+        print(i)
         if i == 0:
             widthsofcenterline.remove(i)
+    if len(widthsofcenterline) == 0:
+        print("this is only intersections")
+        return 0
+    print(len(widthsofcenterline))
     s = 0
     for ii in widthsofcenterline:
         s += ii
@@ -229,10 +229,11 @@ def widthcalculation(line, polygon):
         return n
 
 #fit the big centerline of the road to each polygon that intersects   
-lines_polygons_pairs = fitlinetopolygons(bigcenterline, polygonlist)
+lines_polygons_pairs = fitlinetopolygons(bigcenterline, allpolygons)
 widthsofcenterline = []
 #estimate the width for each pair of centerline-polygon
 for i in lines_polygons_pairs:
+
     n = widthcalculation(i[0], i[1])
     widthsofcenterline.append(n)
 #show the width of each polygon
