@@ -1,21 +1,30 @@
 from geomet import wkt
 import json
 import math
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import geopandas
+from geopandas import GeoDataFrame
+import shapefile
 from shapely.geometry import LineString
 from shapely.geometry import Polygon
 from shapely.geometry import MultiLineString
 from shapely.geometry import Point
 from intersection_identify import checkforcross, checkforTcase2, checkforTmaincase
-from shapefile_manipulation import allpolygons, bigcenterline
+from shapefile_manipulation import allpolygons, alllines
+
+
 
 
 def fitlinetopolygons(line, polygonlist):
     lines_polygons_pairs = []
     for i in polygonlist:
-        if line.intersects(i):
-            fitline = line.intersection(i)
+        if line[0].intersects(i):
+            fitline = line[0].intersection(i)
             lines_polygons_pairs.append([fitline,i])
     return lines_polygons_pairs
+
 
 
 def cutlinetotwenty(line):
@@ -90,8 +99,8 @@ def cutlinetoten(line):
 #function that takes a line and defines 2 offsets 
 #we did this in order to create a line prependicular to our road (the 10 lines that used to define the width of the road should be prependicular to the linear representation of the road)
 def makeoffsets(line):
-    leftline = line[0].parallel_offset(1, 'left')
-    rightline = line[0].parallel_offset(1, 'right')
+    leftline = line[0].parallel_offset(5, 'left')
+    rightline = line[0].parallel_offset(5, 'right')
     #print(leftline)
     #print(rightline)
     #print(leftline)
@@ -142,13 +151,13 @@ def avgwidth2(lst):
 
 def mean_w_centerline(widthsofcenterline):
     for i in widthsofcenterline:
-        print(i)
+        #print(i)
         if i == 0:
             widthsofcenterline.remove(i)
     if len(widthsofcenterline) == 0:
         print("this is only intersections")
         return 0
-    print(len(widthsofcenterline))
+    #print(len(widthsofcenterline))
     s = 0
     for ii in widthsofcenterline:
         s += ii
@@ -168,7 +177,7 @@ def widthcalculation(line, polygon):
         w.append([width,prep_line[1],measuringline])
     # w list contains --> [width value, number of measuring line, measuring line wkt]
     for isss in w:
-        print("this is width of measuring line: ", isss)
+        #print("this is width of measuring line: ", isss)
         if isss[0] == 0.0:
             w.remove(isss)
             print("i found an empty line:", isss)
@@ -190,13 +199,16 @@ def widthcalculation(line, polygon):
     #std = round(std1 - std1*0.08, 6)
     print("this was std: ", std)
     #check if a width record is higher or lower than 1 std and if so mark it as an outlier (append it to an outliers list and remove it later)
-
-    if checkforcross(onlywidths, line):
-        return 0
+    checkforcrosss = checkforcross(onlywidths, line)
+    if checkforcrosss[0]:
+        if checkforcrosss[1] == "T":
+            return [0 , "T"]
+        else:
+            return [0, "C"]
     elif checkforTcase2(onlywidths, line):
-        return 0
+        return [0, "T"]
     elif checkforTmaincase(onlywidths, line):
-        return 0
+        return [0, "T"]
     else:
         #outliers contains --> [number of measuring line, width, 1 or 0]
         for iii in w:
@@ -208,7 +220,7 @@ def widthcalculation(line, polygon):
         for out in outliers:
             for widths in w:
                 if out[0] == widths[1]:
-                    print("i removed", out[0])
+                    #print("i removed", out[0])
                     w.remove(widths)
         #find the lines that are marked as outliers
         outlier_linestrings = [] # --> []
@@ -220,34 +232,44 @@ def widthcalculation(line, polygon):
                     outliers2.append([ln[0], outl[0], outl[1], outl[2]])
         
         #print the outlier prependicular lines
-        for o in outlier_linestrings:
-            print(o)
-        for ooo in outliers2:
-            print(ooo)
+       # for o in outlier_linestrings:
+            #print(o)
+        #for ooo in outliers2:
+            #print(ooo)
 
         n = round(avgwidth(w), 5)
-        return n
+        return [n, "R"]
 
-#fit the big centerline of the road to each polygon that intersects   
-lines_polygons_pairs = fitlinetopolygons(bigcenterline, allpolygons)
-widthsofcenterline = []
-#estimate the width for each pair of centerline-polygon
-for i in lines_polygons_pairs:
+def width_lines_dataset(alllines, allpolygons):
+    line_id_finalwidth = []
+    for i in alllines:
+        print("this is the line with id: ",i)
+        lines_polygons_pairs = fitlinetopolygons(i,allpolygons)
+        widthsofcenterline = []
+        t_intersections = []
+        cross_intersections = []
+        for pair in lines_polygons_pairs:
+            for pairi in pair:
+                print(pairi)
+            n = widthcalculation(pair[0], pair[1])
+            if n[1] == 'R':
+                widthsofcenterline.append(n[0])
+            if n[1] == "T":
+                t_intersections.append(n[0])
+            if n[1] == "C":
+                cross_intersections.append(n[0])
+        num_of_width = 1   
+        for iii in widthsofcenterline:
+            print("width of ", num_of_width, " polygon is: ", iii)
+            num_of_width += 1
 
-    n = widthcalculation(i[0], i[1])
-    widthsofcenterline.append(n)
-#show the width of each polygon
-num_of_width = 1   
-for i in widthsofcenterline:
-    print("width of ", num_of_width, " polygon is: ", i)
-    num_of_width += 1
+        final_w_road = mean_w_centerline(widthsofcenterline)
+        line_id_finalwidth.append([final_w_road, i[1], len(t_intersections), len(cross_intersections)])
+    return line_id_finalwidth
 
-#compute a mean width for the whole centerline
-final_w_road = mean_w_centerline(widthsofcenterline)
-print("this is the final width of the road: ", final_w_road)
+final_list = width_lines_dataset(alllines,allpolygons)
 
 
-
-
-
+for i in final_list:
+    print("this is line with id: ", i[1], "and the widht is: ", i[0], "number of t intersections: ", i[2], "and number of cross intersections: ", i[3])
 
