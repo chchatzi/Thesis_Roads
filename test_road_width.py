@@ -15,8 +15,6 @@ from intersection_identify import checkforcross, checkforTcase2, checkforTmainca
 from shapefile_manipulation import allpolygons, alllines
 
 
-
-
 def fitlinetopolygons(line, polygonlist):
     lines_polygons_pairs = []
     for i in polygonlist:
@@ -24,7 +22,6 @@ def fitlinetopolygons(line, polygonlist):
             fitline = line[0].intersection(i)
             lines_polygons_pairs.append([fitline,i])
     return lines_polygons_pairs
-
 
 
 def cutlinetotwenty(line):
@@ -99,10 +96,8 @@ def cutlinetoten(line):
 #function that takes a line and defines 2 offsets 
 #we did this in order to create a line prependicular to our road (the 10 lines that used to define the width of the road should be prependicular to the linear representation of the road)
 def makeoffsets(line):
-    leftline = line[0].parallel_offset(5, 'left')
-    rightline = line[0].parallel_offset(5, 'right')
-    #print(leftline)
-    #print(rightline)
+    leftline = line[0].parallel_offset(0.0007, 'left')
+    rightline = line[0].parallel_offset(0.0007, 'right')
     #print(leftline)
     #print(rightline)
     #we find the 2 midpoints of the 2 offset lines in order to connect them and create the prependicular line segment
@@ -121,18 +116,38 @@ def widt(prepedicularline, polygon, roadline):
     #prependicular line between 2 offsets intersects polygon
     ln = prepedicularline.intersection(polygon)
     #if returns 2 or more linestrings we need to find the one that intersects the roadline
-    
+
     if ln.type == 'MultiLineString':
         ll = list(ln)
+        s = 0
         for i in ll:
             if i.intersects(roadline):
                 measureline = i
                 w = round(measureline.length, 6)
                 ln = measureline
-                #print(measureline)
+                print(measureline)
+            else:
+                s+=1
+        if len(ll) > 1 and s == len(ll):
+            d = []
+            dd = []
+            print("WEIRD CASE")
+            for i in ll:
+                midi = i.interpolate(0.5, normalized = True)
+                midroadline = roadline.interpolate(0.5,normalized = True)
+                distancetoroadline = LineString([midi, midroadline]).length
+                d.append([distancetoroadline,i])
+                dd.append(distancetoroadline)
+            mindist = min(dd)
+            for val in d:
+                if val[0] == mindist:
+                    w = round(val[1].length,6)
+                    ln = val[1]
+                    print(ln)
     else:
         w = round(ln.length, 4)
-        #print(ln)
+        print(ln)
+    
     return w, ln
 
 def avgwidth(w):
@@ -150,8 +165,12 @@ def avgwidth2(lst):
     return round(avg, 6)
 
 def mean_w_centerline(widthsofcenterline):
+    total = 0
     for i in widthsofcenterline:
-        #print(i)
+        total += i[1]
+    
+    for i in widthsofcenterline:
+        #print("here: ", i)
         if i == 0:
             widthsofcenterline.remove(i)
     if len(widthsofcenterline) == 0:
@@ -160,9 +179,12 @@ def mean_w_centerline(widthsofcenterline):
     #print(len(widthsofcenterline))
     s = 0
     for ii in widthsofcenterline:
-        s += ii
-    mean = s / len(widthsofcenterline)
-    return mean
+        weight = ii[1] / total
+        s += ii[0] * weight
+        print(weight, " ", s)
+    
+
+    return s
 
 def widthcalculation(line, polygon):
     tenlines = cutlinetotwenty(line)
@@ -249,20 +271,21 @@ def width_lines_dataset(alllines, allpolygons):
         t_intersections = []
         cross_intersections = []
         for pair in lines_polygons_pairs:
+            ftiline_length = pair[0].length
             for pairi in pair:
                 print(pairi)
             n = widthcalculation(pair[0], pair[1])
             if n[1] == 'R':
-                widthsofcenterline.append(n[0])
+                widthsofcenterline.append([n[0],ftiline_length])
             if n[1] == "T":
                 t_intersections.append(n[0])
             if n[1] == "C":
                 cross_intersections.append(n[0])
         num_of_width = 1   
         for iii in widthsofcenterline:
-            print("width of ", num_of_width, " polygon is: ", iii)
+            print("width of ", num_of_width, " polygon is: ", iii[0])
             num_of_width += 1
-
+        
         final_w_road = mean_w_centerline(widthsofcenterline)
         line_id_finalwidth.append([final_w_road, i[1], len(t_intersections), len(cross_intersections)])
     return line_id_finalwidth

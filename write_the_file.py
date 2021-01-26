@@ -18,7 +18,6 @@ for lnn in alllines:
     for lnnn in final_list:
         if lnn[1] == lnnn[1]:
             lines_output.append([lnn[1], lnn[0].coords, lnnn[0], lnnn[2], lnnn[3]])
-
 #lines_output --> id, linestring, widht, t_intersections_number, cross_intersections_number
 w2 = []
 t2= []
@@ -47,8 +46,6 @@ for record in check:
     t_int.append(record[4])
     cross_int.append(record[5])
 
-
-
 d = {'ids':[], 'lat':[], 'lon':[], 'widths':[], 't_int':[], 'cross_int':[]}
 
 for idd in ids:
@@ -71,7 +68,6 @@ for cr in cross_int:
 
 df = pd.DataFrame(data=d)
 
-#print(df)
 
 geometry = [Point(xy) for xy in zip(df.lon, df.lat)]
 df = GeoDataFrame(df, geometry=geometry)

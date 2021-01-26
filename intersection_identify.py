@@ -143,15 +143,15 @@ def checkforTcase2(twentylines, roadline):
     #print("it passes the test for cross intersection i am checking for T intersection of case 2")
     if len(twentylines) > 19:
         first = [twentylines[0][0], twentylines[1][0], twentylines[2][0]]#, twentylines[3], twentylines[4], twentylines[5]]
-        mid = [twentylines[7][0], twentylines[8][0], twentylines[9][0], twentylines[10][0], twentylines[11][0], twentylines[12][0]]
+        mid = [twentylines[8][0], twentylines[9][0], twentylines[10][0], twentylines[11][0]]
         last = [twentylines[17][0], twentylines[18][0], twentylines[19][0]]
     elif len(twentylines) > 18:
         first = [twentylines[0][0], twentylines[1][0], twentylines[2][0]] #, twentylines[3], twentylines[4], twentylines[5]]
-        mid = [twentylines[7][0], twentylines[8][0], twentylines[9][0], twentylines[10][0], twentylines[11][0], twentylines[12][0]]
+        mid = [twentylines[8][0], twentylines[9][0], twentylines[10][0], twentylines[11][0]]
         last = [twentylines[16][0], twentylines[17][0], twentylines[18][0]]
     elif len(twentylines) > 17:
         first = [twentylines[0][0], twentylines[1][0], twentylines[2][0]] #, twentylines[3], twentylines[4], twentylines[5]]
-        mid = [twentylines[6][0],twentylines[7][0], twentylines[8][0], twentylines[9][0], twentylines[10][0], twentylines[11][0], twentylines[12][0]]
+        mid = [twentylines[7][0], twentylines[8][0], twentylines[9][0], twentylines[10][0], twentylines[11][0]]
         last = [twentylines[15][0], twentylines[16][0], twentylines[17][0]]
     f = avgwidth2(first)
     m = avgwidth2(mid)
@@ -229,7 +229,7 @@ def checkforTcase2(twentylines, roadline):
         return False
 
 def checkforTmaincase(twentylines, roadline):
-    print("it passed the test for T intersection of case 1 and 2, checking for T intersection Main case!")
+    #print("it passed the test for T intersection of case 1 and 2, checking for T intersection Main case!")
     if len(twentylines) > 19:
         first = [twentylines[0][0], twentylines[1][0], twentylines[2][0], twentylines[3][0]]
         last = [twentylines[17][0], twentylines[18][0], twentylines[19][0]]
@@ -242,7 +242,7 @@ def checkforTmaincase(twentylines, roadline):
     f = avgwidth2(first)
     l = avgwidth2(last)
     print("first lines mean: ", f, " " "and last lines mean: ", l)
-    if  f > 3*l or l> 3*f:
+    if  f > 2.9*l or l> 2.9*f:
         print("Main case of T intersection")
         return True
     else:
