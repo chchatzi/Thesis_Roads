@@ -9,14 +9,8 @@ import matplotlib.pyplot as plt
 import geopandas
 from merge_lines_lfnid_toronto import merge_toronto_lines_lfnid
 
-shapefile_name = "polygons_test.shp"
-shapefile_name2 = "lines_test.shp"
-#testing from toronto dataset
-
-#lines to be merged by lfnid
 line = "toronto_sample_lines.shp"
 polygons = "toronto_sample_polygons.shp"
-
 
 def readpolygons(shapefile_name):
     polygons_test = shapefile.Reader(shapefile_name)
@@ -49,7 +43,6 @@ def readlines(shapefile_name):
         road_id+=1
     return alllines
 
-#toronto_lines_merged = toronto_lfn_id_merge(merge_lines)
 merg_lines = merge_toronto_lines_lfnid(line)
 alllines = readlines(merg_lines)
 allpolygons = readpolygons(polygons)
