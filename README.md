@@ -1,5 +1,5 @@
 # Thesis_Roads
-Thesis Road Modelling
+Road width estimation with areal and linear vector data
 
 # General Implementation
 0) Input: two shapefiles, i) sample of areal representations of roads in a specific area in Toronto (toronto_sample_polygons.shp), ii) Centerlines of roads for the same area in Toronto (toronto_sample_lines.shp)
