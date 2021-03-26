@@ -13,10 +13,9 @@ from shapely.validation import explain_validity
 from operator import itemgetter
 from shapely.ops import linemerge
 
-def merge_toronto_lines_lfnid(lines_file):
-    '''Takes a lines shapefile of toronto dataset, and merges the lines that have the same LFN ID'''
+def merge_lines_osmid(lines_file, epgs):
     nn = geopandas.read_file(lines_file)
-    nn = nn.to_crs("EPSG:4267")
+    nn = nn.to_crs(epgs)
     nn.to_file("projected_lines_shapefile.shp")
 
     lines = geopandas.read_file("projected_lines_shapefile.shp")
@@ -25,7 +24,7 @@ def merge_toronto_lines_lfnid(lines_file):
     for i in range(len(lines)):
         rec = lines.loc[i]
         #print(rec['geometry'])
-        lfn = rec['LFN_ID']
+        lfn = rec['osmid']
         g = rec['geometry']
         lstt.append([lfn,g])
 
@@ -93,5 +92,5 @@ def merge_toronto_lines_lfnid(lines_file):
     df = GeoDataFrame(df, geometry='geometry')
 
     #print(df)
-    df.to_file("merged_lines_toronto.shp")
-    return "merged_lines_toronto.shp"
+    df.to_file("merged_osmid_lines.shp")
+    return "merged_osmid_lines.shp"

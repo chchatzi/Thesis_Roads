@@ -12,16 +12,21 @@ from shapely.geometry import LineString
 from shapely.geometry import Polygon
 from shapely.geometry import MultiLineString
 from shapely.geometry import Point
-from intersection_identify import checkforcross, checkforTcase2, checkforTmaincase
+from intersection_identify import checkforcross, checkforTcase2, checkforTmaincase, checkforcross2
 from shapefile_manipulation import allpolygons, alllines
 
 
 def fitlinetopolygons(line, polygonlist):
     lines_polygons_pairs = []
     for i in polygonlist:
-        if line[0].intersects(i):
-            fitline = line[0].intersection(i)
-            lines_polygons_pairs.append([fitline,i])
+        if type(i) != list:
+            if line[0].intersects(i):
+                fitline = line[0].intersection(i)
+                lines_polygons_pairs.append([fitline,i,"rd"])
+        else:
+            if line[0].intersects(i[0]):
+                fitline = line[0].intersection(i[0])
+                lines_polygons_pairs.append([fitline,i[0],i[1]])
     return lines_polygons_pairs
 
 
@@ -96,9 +101,10 @@ def cutlinetoten(line):
 
 #function that takes a line and defines 2 offsets 
 #we did this in order to create a line prependicular to our road (the 10 lines that used to define the width of the road should be prependicular to the linear representation of the road)
-def makeoffsets(line):
-    leftline = line[0].parallel_offset(0.0007, 'left')
-    rightline = line[0].parallel_offset(0.0007, 'right')
+def makeoffsets(line, dist):
+    leftline = line[0].parallel_offset(dist, 'left')
+    rightline = line[0].parallel_offset(dist, 'right')
+    #print("offsetsss")
     #print(leftline)
     #print(rightline)
     #we find the 2 midpoints of the 2 offset lines in order to connect them and create the prependicular line segment
@@ -107,11 +113,10 @@ def makeoffsets(line):
     #print(midpointleft)
     #print(midpointright)
     prependicular_line = LineString([midpointleft, midpointright])
+    #print("prep")
     #print(prependicular_line)
     prep_line = [prependicular_line, line[1]]
     return prep_line
-
-
 
 def widt(prepedicularline, polygon, roadline):
     #prependicular line between 2 offsets intersects polygon
@@ -124,7 +129,7 @@ def widt(prepedicularline, polygon, roadline):
         for i in ll:
             if i.intersects(roadline):
                 measureline = i
-                tom = measureline.length * 111139 
+                tom = measureline.length #* 111139 
                 w = round(tom, 6)
                 ln = measureline
                 #print(measureline)
@@ -143,12 +148,12 @@ def widt(prepedicularline, polygon, roadline):
             mindist = min(dd)
             for val in d:
                 if val[0] == mindist:
-                    tom = val[1].length * 111139 
+                    tom = val[1].length #* 111139 
                     w = round(tom,6)
                     ln = val[1]
                     #print(ln)
     else:
-        tom = ln.length * 111139
+        tom = ln.length# * 111139
         w = round(tom, 4)
         #print(ln)
     
@@ -211,7 +216,6 @@ def width_pair_differences(widthsofcenterline,line):
     if len(e) > 0:
         return [e[0],line[0],line[1]]
 
-
 def mean_w_centerline(widthsofcenterline):
     total = 0
     for i in widthsofcenterline:
@@ -233,13 +237,13 @@ def mean_w_centerline(widthsofcenterline):
 
     return round(s,5), "check"           
 
-def widthcalculation(line, polygon):
+def widthcalculation(line, polygon,dist):
     tenlines = cutlinetotwenty(line)
     w = []
     outliers = []
     allpreplines = []
     for i in tenlines:
-        prep_line = makeoffsets(i)
+        prep_line = makeoffsets(i, dist)
         allpreplines.append(prep_line)
         width = widt(prep_line[0], polygon, i[0])[0]
         measuringline = widt(prep_line[0], polygon, i[0])[1]
@@ -269,14 +273,8 @@ def widthcalculation(line, polygon):
     #make the code a bit more robust (by marking widths as an outliers a bit easier)
     #std = round(std1 - std1*0.08, 6)
     print("this was std: ", std)
-    #check if a width record is higher or lower than 1 std and if so mark it as an outlier (append it to an outliers list and remove it later)
-    checkforcrosss = checkforcross(onlywidths, line)
-    if checkforcrosss[0]:
-        if checkforcrosss[1] == "T":
-            return [0 , "T"]
-        else:
-            return [0, "C"]
-    elif checkforTcase2(onlywidths, line):
+
+    if checkforTcase2(onlywidths, line):
         return [0, "T"]
     elif checkforTmaincase(onlywidths, line):
         return [0, "T"]
@@ -323,10 +321,8 @@ def widthcalculation(line, polygon):
 
         return [mean, "R", w, outliers2, median, maxi, mini, m, std, new_m, new_std]
 
-def width_lines_dataset(alllines, allpolygons):
+def width_lines_dataset(alllines, allpolygons, dist):
     line_id_finalwidth = []
-    #line_id_diff_means = []
-    #line_id_diff_medians = []
     measuring_lines = []
     outliers = []
     for i in alllines:
@@ -339,55 +335,49 @@ def width_lines_dataset(alllines, allpolygons):
         maxies = []
         minies = []
         for pair in lines_polygons_pairs:
-            ftiline_length = pair[0].length* 111139
-            for pairi in pair:
-                print(pairi)
-            n = widthcalculation(pair[0], pair[1])
-            if n[1] == 'R':
-                means.append([n[0],ftiline_length])
-                measuring_lines.append([n[2],i[1],n[7],n[8],n[9],n[10]])
-                outliers.append([n[3],i[1]])
-                medians.append([n[4],ftiline_length])
-                maxies.append(n[5])
-                minies.append(n[6])
-                #m.append(n[7])
-                #stds.append(n[8])
-            if n[1] == "T":
-                t_intersections.append(n[0])
-            if n[1] == "C":
-                cross_intersections.append(n[0])
-        '''for statistics
+            ftiline_length = pair[0].length#* 111139
+            print(ftiline_length)
+            if ftiline_length < 1:
+                print("something is wrong, super small fitline!!")
+            else:
+                for pairi in pair:
+                    print(pairi)
+                if pair[2] == "rd":
+                    n = widthcalculation(pair[0], pair[1], dist)
+                    if n[1] == 'R':
+                        means.append([n[0],ftiline_length])
+                        measuring_lines.append([n[2],i[1],n[7],n[8],n[9],n[10]])
+                        outliers.append([n[3],i[1]])
+                        medians.append([n[4],ftiline_length])
+                        maxies.append(n[5])
+                        minies.append(n[6])
+                    #m.append(n[7])
+                    #stds.append(n[8])
+                    if n[1] == "T":
+                        t_intersections.append(n[0])
 
-        print("THIS IS MEANS LIST", means)
-        print("THIS IS MEDIANS LIST", medians)   
-        if len(means)> 0 and len(medians)>0:
-            find_differences_means = width_pair_differences(means,i)
-            find_differences_median = width_pair_differences(medians,i)
-        
-            line_id_diff_means.append(find_differences_means)
-            line_id_diff_medians.append(find_differences_median)
-        '''
+                elif pair[2] == "cross":
+                    cross_intersections.append("c")
 
-        #this is the mean of the mean values that is return for each polygon
-        final_w_road_mean = mean_w_centerline(means)[0]
-        #this is the mean of the median values that is returned for each polygon
-        final_w_road_median = mean_w_centerline(medians)[0]
-        if mean_w_centerline(means)[1] == "max_min0":
-            max_of_max = 0
-            min_of_min = 0
-        else:
-            max_of_max = round((max(maxies)),5)
-            min_of_min = round((min(minies)),5)  
-        
-        line_id_finalwidth.append([final_w_road_mean, i[1], len(t_intersections), len(cross_intersections), final_w_road_median, max_of_max, min_of_min])
-    return line_id_finalwidth, measuring_lines, outliers #, line_id_diff_means, line_id_diff_medians
+            #this is the mean of the mean values that is return for each polygon
+            final_w_road_mean = mean_w_centerline(means)[0]
+            #this is the mean of the median values that is returned for each polygon
+            final_w_road_median = mean_w_centerline(medians)[0]
+            if mean_w_centerline(means)[1] == "max_min0":
+                max_of_max = 0
+                min_of_min = 0
+            else:
+                max_of_max = round((max(maxies)),5)
+                min_of_min = round((min(minies)),5)  
+            
+            line_id_finalwidth.append([final_w_road_mean, i[1], len(t_intersections), len(cross_intersections), final_w_road_median, max_of_max, min_of_min])
+    return line_id_finalwidth, measuring_lines, outliers
 
+widths_fnl = width_lines_dataset(alllines,allpolygons,40)
 
-final_list = width_lines_dataset(alllines,allpolygons)[0]
-measuring_liness = width_lines_dataset(alllines,allpolygons)[1]
-outlierss = width_lines_dataset(alllines,allpolygons)[2]
-#mean_diff = width_lines_dataset(alllines,allpolygons)[3]
-#median_diff = width_lines_dataset(alllines,allpolygons)[4]
+final_list = widths_fnl[0]
+measuring_liness = widths_fnl[1]
+outlierss = widths_fnl[2]
 
 
 for i in final_list:
@@ -398,47 +388,3 @@ measuring_lines = []
 for mm in measuring_liness:
     for mmm in mm[0]:
         measuring_lines.append([mmm[0], mm[1], mmm[2], mm[2],mm[3],mm[4],mm[5]])     
-
-
-
-
-'''Checking statistics, different pair widths in same big merged centerline
-
-res = [] 
-for val in mean_diff: 
-    if val != None : 
-        res.append(val)
-
-res2 = [] 
-for val2 in median_diff: 
-    if val2 != None : 
-        res2.append(val2)
-
-    Checking statistics, different width in same pair
-
-print("cluster mean")
-for hm in measuring_lines:
-    
-    if abs(hm[0]-hm[5])>2:
-        print(hm[2])
-        continue
-
-print("cluster median")
-for ss in final_list:
-    for ass in measuring_lines:
-        if ass[1] == ss[1]:
-            if abs(ass[0]-ss[4]) > 1:
-                print(ass[2])
-
-
-
-out = []
-for oo in outlierss:
-    if len(oo[0])!= 0:
-        out.append(oo)
-outliers = []
-for os in out:
-    for sss in os[0]:
-        outliers.append([sss[0],os[1],sss[2]])
-print(outliers)
-'''
